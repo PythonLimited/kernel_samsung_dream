@@ -4,8 +4,8 @@
 BUILD_WHERE=$(pwd)
 BUILD_KERNEL_DIR=$BUILD_WHERE
 BUILD_ROOT_DIR=$BUILD_KERNEL_DIR/..
-BUILD_KERNEL_OUT_DIR=$BUILD_ROOT_DIR/kernel_out/KERNEL_OBJ
-PRODUCT_OUT=$BUILD_ROOT_DIR/kernel_out
+BUILD_KERNEL_OUT_DIR=$BUILD_ROOT_DIR/source_kernel_out/KERNEL_OBJ
+PRODUCT_OUT=$BUILD_ROOT_DIR/source_kernel_out
 
 export PATH=$PATH:/home/vaughn/android/toolchain/aarch64-linux-android/bin/
 export KERNEL_TOOLCHAIN=aarch64-linux-android-
