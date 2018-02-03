@@ -557,7 +557,6 @@ static int task_get_unused_fd_flags(struct binder_proc *proc, int flags)
 	struct files_struct *files = proc->files;
 	unsigned long rlim_cur;
 	unsigned long irqs;
-	int fd;
 
 	if (files == NULL)
 		return -ESRCH;
@@ -568,11 +567,7 @@ static int task_get_unused_fd_flags(struct binder_proc *proc, int flags)
 	rlim_cur = task_rlimit(proc->tsk, RLIMIT_NOFILE);
 	unlock_task_sighand(proc->tsk, &irqs);
 
-	preempt_enable_no_resched();
-	fd = __alloc_fd(files, 0, rlim_cur, flags);
-	preempt_disable();
-
-	return fd;
+	return __alloc_fd(files, 0, rlim_cur, flags);
 }
 
 /*
@@ -581,11 +576,8 @@ static int task_get_unused_fd_flags(struct binder_proc *proc, int flags)
 static void task_fd_install(
 	struct binder_proc *proc, unsigned int fd, struct file *file)
 {
-	if (proc->files) {
-		preempt_enable_no_resched();
+	if (proc->files)
 		__fd_install(proc->files, fd, file);
-		preempt_disable();
-	}
 }
 
 /*
@@ -1646,7 +1638,6 @@ static void binder_transaction_buffer_release(struct binder_proc *proc,
 			fp = to_flat_binder_object(hdr);
 			ref = binder_get_ref(proc, fp->handle,
 					     hdr->type == BINDER_TYPE_HANDLE);
-
 			if (ref == NULL) {
 				pr_err("transaction release %d bad handle %d, target died\n",
 				 debug_id, fp->handle);
@@ -2309,7 +2300,7 @@ static void binder_transaction(struct binder_proc *proc,
 		goto err_bad_offset;
 	}
 	if (!IS_ALIGNED(extra_buffers_size, sizeof(u64))) {
-		binder_user_error("%d:%d got transaction with unaligned buffers size, %lld\n",
+		binder_user_error("%d:%d got transaction with unaligned buffers size, %llu\n",
 				  proc->pid, thread->pid,
 				  extra_buffers_size);
 		return_error = BR_FAILED_REPLY;
@@ -2426,10 +2417,9 @@ static void binder_transaction(struct binder_proc *proc,
 				return_error_line = __LINE__;
 				goto err_bad_offset;
 			}
-			if (copy_from_user_preempt_disabled(
-					sg_bufp,
-					(const void __user *)(uintptr_t)
-					bp->buffer, bp->length)) {
+			if (copy_from_user(sg_bufp,
+					   (const void __user *)(uintptr_t)
+					    bp->buffer, bp->length)) {
 				binder_user_error("%d:%d got transaction with invalid offsets ptr\n",
 						  proc->pid, thread->pid);
 				return_error = BR_FAILED_REPLY;
@@ -2784,8 +2774,8 @@ static int binder_thread_write(struct binder_proc *proc,
 		case BC_REPLY_SG: {
 			struct binder_transaction_data_sg tr;
 
-			if (copy_from_user_preempt_disabled(&tr, ptr,
-							    sizeof(tr)))
+			if (copy_from_user(&tr, ptr,
+					   sizeof(tr)))
 				return -EFAULT;
 			ptr += sizeof(tr);
 			binder_transaction(proc, thread, &tr.transaction_data,
@@ -5056,13 +5046,6 @@ static void print_binder_proc_stats(struct seq_file *m,
 	seq_printf(m, "  pending transactions: %d\n", count);
 
 	print_binder_stats(m, "  ", &proc->stats);
-
-#ifdef CONFIG_SEC_TRACE_BINDERCNT
-	if (proc->stats.process_bnd_cnt) {
-		seq_printf(m, "  CALLS_TO_TARGET_PROCESS (from %s %d): %d\n", 
-				proc->tsk->comm, proc->tsk->pid, proc->stats.process_bnd_cnt);
-	}
-#endif
 }
 
 
@@ -5169,34 +5152,6 @@ static int binder_transaction_log_show(struct seq_file *m, void *unused)
 	return 0;
 }
 
-#ifdef CONFIG_SEC_TRACE_BINDERCNT
-static int binder_process_transaction_show(struct seq_file *m, void *unused)
-{
-	struct binder_proc *proc;
-	int ppid;
-	int do_lock = !binder_debug_no_lock;
-
-	if (do_lock)
-		binder_lock(__func__);
-
-	hlist_for_each_entry(proc, &binder_procs, proc_node) {
-		// Don't let show any daemon's binder count
-		ppid = proc->tsk->group_leader->parent->pid;
-
-		if (proc->stats.process_bnd_cnt && ppid != 1 && ppid != 2) {
-			seq_printf(m, "%d_%d_%s\n", proc->pid,
-					proc->stats.process_bnd_cnt,
-					proc->tsk->group_leader->comm);
-		}
-	}
-
-	if (do_lock)
-		binder_unlock(__func__);
-
-	return 0;
-}
-#endif
-
 static const struct file_operations binder_fops = {
 	.owner = THIS_MODULE,
 	.poll = binder_poll,
@@ -5286,13 +5241,6 @@ static int __init binder_init(void)
 				    binder_debugfs_dir_entry_root,
 				    &binder_transaction_log_failed,
 				    &binder_transaction_log_fops);
-#ifdef CONFIG_SEC_TRACE_BINDERCNT
-		debugfs_create_file("process_transaction",
-				    S_IRUGO,
-				    binder_debugfs_dir_entry_root,
-				    NULL,
-				    &binder_process_transaction_fops);
-#endif
 	}
 
 	/*
@@ -5344,3 +5292,4 @@ device_initcall(binder_init);
 #include "binder_trace.h"
 
 MODULE_LICENSE("GPL v2");
+
