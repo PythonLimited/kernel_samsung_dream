@@ -1171,6 +1171,7 @@ static int ipxitf_ioctl(unsigned int cmd, void __user *arg)
 		rc = 0;
 		if (copy_to_user(arg, &ifr, sizeof(ifr)))
 			rc = -EFAULT;
+
 		ipxitf_put(ipxif);
 		break;
 	}
