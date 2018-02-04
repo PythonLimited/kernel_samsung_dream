@@ -126,6 +126,7 @@ static void dump_backtrace_entry_auto_summary(unsigned long where)
 }
 #endif
 
+static void __dump_instr(const char *lvl, struct pt_regs *regs)
 {
 	unsigned long addr = instruction_pointer(regs);
 	char str[sizeof("00000000 ") * 5 + 2 + 1], *p = str;

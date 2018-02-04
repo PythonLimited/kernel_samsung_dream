@@ -685,6 +685,8 @@ struct ufs_hba {
 	 * CAUTION: Enabling this might reduce overall UFS throughput.
 	 */
 #define UFSHCD_CAP_INTR_AGGR (1 << 4)
+	/* Allow only hibern8 without clk gating */
+#define UFSHCD_CAP_FAKE_CLK_GATING (1 << 5)
 	/*
 	 * This capability allows the device auto-bkops to be always enabled
 	 * except during suspend (both runtime and suspend).
