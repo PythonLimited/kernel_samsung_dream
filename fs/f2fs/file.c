@@ -1836,6 +1836,7 @@ static int f2fs_ioc_set_encryption_policy(struct file *filp, unsigned long arg)
 	f2fs_update_time(F2FS_I_SB(inode), REQ_TIME);
 
 	return fscrypt_ioctl_set_policy(filp, (const void __user *)arg);
+
 }
 
 static int f2fs_ioc_get_encryption_policy(struct file *filp, unsigned long arg)
