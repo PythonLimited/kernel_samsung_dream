@@ -4,13 +4,16 @@
 BUILD_WHERE=$(pwd)
 BUILD_KERNEL_DIR=$BUILD_WHERE
 BUILD_ROOT_DIR=$BUILD_KERNEL_DIR/..
-BUILD_KERNEL_OUT_DIR=$BUILD_ROOT_DIR/kernel_out/KERNEL_OBJ
-PRODUCT_OUT=$BUILD_ROOT_DIR/kernel_out
+BUILD_KERNEL_OUT_DIR=$BUILD_ROOT_DIR/source_kernel_out/KERNEL_OBJ
+PRODUCT_OUT=$BUILD_ROOT_DIR/source_kernel_out
+
+export PATH=$PATH:/home/vaughn/android/toolchain/aarch64-linux-android/bin/
+export KERNEL_TOOLCHAIN=aarch64-linux-android-
 
 BUILD_CROSS_COMPILE=$KERNEL_TOOLCHAIN
 BUILD_JOB_NUMBER=`grep processor /proc/cpuinfo|wc -l`
 
-KERNEL_DEFCONFIG=exynos8895-$1_eur_open_defconfig
+KERNEL_DEFCONFIG=exynos8895-dreamlte_eur_open_defconfig
 
 KERNEL_IMG=$PRODUCT_OUT/Image
 DTIMG=$PRODUCT_OUT/dt.img
